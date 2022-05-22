@@ -1,0 +1,5 @@
+resolver: nightly-2022-01-10
+system-ghc: true
+extra-deps:
+- memory-0.17.0@sha256:c8809b0b3026193c813a88c1f626758c923fae7e0b0d6b96b91c6ce5e14173ec,4468
+- cryptonite-0.30@sha256:12c85dea7be63e5ad90bcb487eb3846bf3c413347f94336fa1dede7b28f9936a,18301
