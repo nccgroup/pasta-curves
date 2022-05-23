@@ -12,7 +12,7 @@ import Test.Tasty.QuickCheck (Arbitrary(..), testProperty)
 import Test.Tasty.HUnit (assertBool, testCase)
 import TestFields ()
 import PastaCurves
-import Curves (Point(Affine))
+import Curves (Point(Projective))
 
 
 instance Arbitrary Pallas where
@@ -66,7 +66,7 @@ testHashToPallas = testCase "testHashToPallas" $ assertBool "Failed testHashToPa
     z = 0x1d48103df8fcbb70d1809c1806c95651dd884a559fec0549658537ce9d94bed9 :: Fp
     x = 0x36a6e3a9c50b7b6540cb002c977c82f37f8a875fb51eb35327ee1452e6ce7947 * inv0 (z^(2::Integer))
     y = 0x01da3b4403d73252f2d7e9c19bc23dc6a080f2d02f8262fca4f7e3d756ac6a7c * inv0 (z^(3::Integer))
-    expected = Affine x y :: Pallas    
+    expected = Projective x y 1 :: Pallas    
     helper = actual == expected
 
 
@@ -78,5 +78,5 @@ testHashToVesta = testCase "testHashToVesta" $ assertBool "Failed testHashToVest
     z = 0x1b58d4aa4d68c3f4d9916b77c79ff9911597a27f2ee46244e98eb9615172d2ad :: Fq
     x = 0x12763505036e0e1a6684b7a7d8d5afb7378cc2b191a95e34f44824a06fcbd08e * inv0 (z^(2::Integer))
     y = 0x0256eafc0188b79bfa7c4b2b393893ddc298e90da500fa4a9aee17c2ea4240e6 * inv0 (z^(3::Integer))
-    expected = Affine x y :: Vesta
+    expected = Projective x y 1 :: Vesta
     helper = actual == expected

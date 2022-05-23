@@ -69,10 +69,13 @@ hashToPallas msg = result
     (fe0, fe1) = hash2Field msg "z.cash:test" "pallas" :: (Fp, Fp)
     q0 = mapToCurveSimpleSwu fe0 :: IsoPallas
     q1 = mapToCurveSimpleSwu fe1 :: IsoPallas
-    r = toAffine $ pointAdd q0 q1 :: IsoPallas
-    (x, y) = case r of
-      (Affine xx yy) -> (xx, yy)
-      _ -> error "hashToPallas: non-Affine should be impossible; point at infinity?"
+    -- r = toAffine $ pointAdd q0 q1 :: IsoPallas
+    -- (x, y) = case r of
+    --   (Affine xx yy) -> (xx, yy)
+    --   _ -> error "hashToPallas: non-Affine should be impossible; point at infinity?"
+    
+    (Projective xp yp zp) = pointAdd q0 q1 :: IsoPallas
+    x = xp * inv0 zp ;  y = yp * inv0 zp
     xTop = head isoPallasVecs * x^(3::Integer) + isoPallasVecs !! 1 * x^(2::Integer) + isoPallasVecs !! 2 * x + isoPallasVecs !! 3
     xBot = x^(2::Integer) + isoPallasVecs !! 4 * x + isoPallasVecs !! 5
     yTop = isoPallasVecs !! 6 * x^(3::Integer) + isoPallasVecs !! 7 * x^(2::Integer) + isoPallasVecs !! 8 * x + isoPallasVecs !! 9
@@ -89,10 +92,13 @@ hashToVesta msg = result
     (fe0, fe1) = hash2Field msg "z.cash:test" "vesta" :: (Fq, Fq)
     q0 = mapToCurveSimpleSwu fe0 :: IsoVesta
     q1 = mapToCurveSimpleSwu fe1 :: IsoVesta
-    r = toAffine $ pointAdd q0 q1 :: IsoVesta
-    (x, y) = case r of
-      (Affine xx yy) -> (xx, yy)
-      _ -> error "hashToVesta: non-Affine should be impossible; point at infinity?"
+    -- r = toAffine $ pointAdd q0 q1 :: IsoVesta
+    -- (x, y) = case r of
+    --   (Affine xx yy) -> (xx, yy)
+    --   _ -> error "hashToVesta: non-Affine should be impossible; point at infinity?"
+    (Projective xp yp zp) = pointAdd q0 q1 :: IsoVesta
+    x = xp * inv0 zp ;  y = yp * inv0 zp
+
     xTop = head isoVestaVecs * x^(3::Integer) + isoVestaVecs !! 1 * x^(2::Integer) + isoVestaVecs !! 2 * x + isoVestaVecs !! 3
     xBot = x^(2::Integer) + isoVestaVecs !! 4 * x + isoVestaVecs !! 5
     yTop = isoVestaVecs !! 6 * x^(3::Integer) + isoVestaVecs !! 7 * x^(2::Integer) + isoVestaVecs !! 8 * x + isoVestaVecs !! 9

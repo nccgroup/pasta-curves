@@ -26,12 +26,10 @@ import Fields (Field (..))
 import Data.Maybe (fromJust)
 import Control.Monad (mfilter)
 
-
-data Point (a::Nat) (b::Nat) (baseX::Nat) (baseY::Nat) f =
-            Projective {_px :: f, _py :: f, _pz :: f} -- (x * inv0 z, y * inv0 z)
-            | Affine {_ax :: f, _ay :: f}
-            | PointAtInfinity deriving stock (Show)
-
+-- | Doc for point
+data Point (a::Nat) (b::Nat) (baseX::Nat) (baseY::Nat) f = 
+  Projective {_x :: f, _y :: f, _z :: f} deriving stock (Show) -- (x * inv0 z, y * inv0 z)
+            
 
 -- CPP macro 'helpers' to extract the curve parameters from `Point a b baseX baseY f`
 #define A natVal (Proxy :: Proxy a)
@@ -42,12 +40,8 @@ data Point (a::Nat) (b::Nat) (baseX::Nat) (baseY::Nat) f =
 
 instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
   Eq (Point a b baseX baseY f) where
-
-  (==) (Affine x1 y1) (Affine x2 y2) = (x1 == x2) && (y1 == y2)
-  (==) PointAtInfinity PointAtInfinity = True
-  (==) PointAtInfinity _ = False
-  (==) _ PointAtInfinity = False
-  (==) pt1 pt2 = toAffine pt1 == toAffine pt2  -- one or both are projective
+  (==) (Projective x1 y1 z1) (Projective x2 y2 z2) = 
+    (x1 * inv0 z1 == x2 * inv0 z2) && (y1 * inv0 z1 == y2 * inv0 z2)
 
 
 -- | The `CurvePt` class provides the bulk of the functionality related to operations
@@ -75,14 +69,8 @@ class CurvePt a where
   -- | The `pointAdd` function adds two curve points
   pointAdd :: a -> a -> a
 
-  -- | The `toAffine` function converts to an affine representation. Revist: necessary to expose?
-  toAffine :: a -> a
-
   -- | The `toBytesC` function serializes a point
   toBytesC :: a -> ByteString
-
-  -- | The `toProjective` function coverts to a projective representation. Revisit: necessary to expose?
-  toProjective :: a -> a
 
 
 instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
@@ -92,7 +80,7 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
 
 
   fromBytesC bytes
-    | length bytes == 1 && index bytes 0 == 0 = Just PointAtInfinity
+    | length bytes == 1 && index bytes 0 == 0 = Just neutral
     | length bytes == expLen && (index bytes 0 == 0x2 || index bytes 0 == 0x03) = result
         where
          expLen = 1 + length (toBytesF (fromInteger (A) :: f))
@@ -101,19 +89,18 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
          alpha = (\t -> t^(3::Integer) + ((fromInteger $ A)::f) * t + ((fromInteger $ B)::f)) <$> x
          beta = alpha >>= sqrt
          y =  (\t -> if sgn0 t == sgn0y then t else negate t) <$> beta
-         proposed = (Affine <$> x <*> y) :: Maybe (Point a b baseX baseY f)
-         result = mfilter isOnCurve proposed :: Maybe (Point a b baseX baseY f)
-  fromBytesC _ = Nothing
+         proposed = (Projective <$> x <*> y <*> Just 1) :: Maybe (Point a b baseX baseY f)
+         result = mfilter isOnCurve proposed
+  --fromBytesC _ = Nothing
 
 
-  isOnCurve PointAtInfinity = True
-  isOnCurve (Affine x y) = y^(2::Integer) == x^(3::Integer) + fromInteger (A) * x + fromInteger (B)
-  isOnCurve pt = isOnCurve $ toAffine pt
+  isOnCurve (Projective xp yp zp) = y^(2::Integer) == x^(3::Integer) + fromInteger (A) * x + fromInteger (B)
+    where
+      x = xp * inv0 zp
+      y = yp * inv0 zp
 
 
   negatePt (Projective x y z) = Projective x (- y) z
-  negatePt PointAtInfinity = PointAtInfinity
-  negatePt a = negatePt $ toProjective a
 
 
   neutral = Projective 0 1 0
@@ -139,28 +126,16 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
       m15 = (- m0 - m1 + m3) * (m0 * 3 + m9)
       m16 = (- m1 - m2 + m5) * (m1 + m6 + m7)
       result = Projective (-m13 + m14) (m8 + m12) (m15 + m16) :: Point a b baseX baseY f
-  pointAdd PointAtInfinity pt2 = pt2
-  pointAdd pt1 PointAtInfinity = pt1
-  pointAdd pt1 pt2 = pointAdd (toProjective pt1) (toProjective pt2)
-
-
-  toAffine (Projective _ _ 0) = PointAtInfinity
-  toAffine (Projective x y z) = Affine (x * inv0 z) (y * inv0 z)
-  toAffine (Affine x y) = Affine x y
-  toAffine PointAtInfinity = PointAtInfinity
 
 
   -- Compressed; section 2.3.3 on page 10 of https://www.secg.org/sec1-v2.pdf
-  toBytesC PointAtInfinity = pack [0]
-  toBytesC (Affine x y)
+  toBytesC (Projective xp yp zp)
+    | zp == 0 = pack [0]
     | sgn0 y == 0 = cons 0x02 (toBytesF x)
     | otherwise   = cons 0x03 (toBytesF x)
-  toBytesC pt = toBytesC (toAffine pt)
-
-
-  toProjective (Projective x y z) = Projective x y z
-  toProjective (Affine x y) = Projective x y 1
-  toProjective PointAtInfinity = Projective 0 1 0
+    where
+      x = xp * inv0 zp
+      y = yp * inv0 zp
 
 
 -- | The `Curve` class provides the elliptic point multiplication operation involving
