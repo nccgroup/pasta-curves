@@ -14,16 +14,16 @@ element, and a variety of  supporting functionality such as point/element
 arithmetic, serialization, and hash-to-curve. The algorithms are NOT constant
 time.
 
-Pallas is y<sup>2</sup> = x</sup>3</sup> + 5 over F_p(0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001).
+Pallas is y<sup>2</sup> = x<sup>3</sup> + 5 over F<sub>p</sub>(0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001).
 The order of the Pallas curve is 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001.
 
 
-Vesta is y<sup>2</sup> = x<sup>3</sup> + 5 over F_q(0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001).
+Vesta is y<sup>2</sup> = x<sup>3</sup> + 5 over F<sub>q</sub>(0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001).
 The order of the Vesta curve is 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001.
 
 The curves are designed such that the order of one matches the field 
 characteristic of the other. For a brief introduction, see the Zcash blog 
-titled["The Pasta Curves for Halo 2 and Beyond"](https://electriccoin.co/blog/the-pasta-curves-for-halo-2-and-beyond/).
+titled ["The Pasta Curves for Halo 2 and Beyond"](https://electriccoin.co/blog/the-pasta-curves-for-halo-2-and-beyond/).
 The reference Rust implementation (which inspired this implementation) 
 can be found at: <https://github.com/zcash/pasta_curves>.
 

@@ -15,9 +15,9 @@ hash-to-curve. The algorithms are NOT constant time.
 \[
 \text{Pallas: } y^2 = x^3 + 5 \text{ over } F_p(0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001)
 \]
-
+    
 \[
-\text{Vesta: }  y^2 = x^3 + 5 \text{ over } F_q(0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001)
+\text{Vesta:  }  y^2 = x^3 + 5 \text{ over } F_q(0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001)
 \]
 
 The order of the Pallas curve is 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001.
