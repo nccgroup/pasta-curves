@@ -1,9 +1,9 @@
 cabal-version:         3.0
 name:                  pasta-curves
 version:               0.0.0.0
-synopsis:              Provides the Pasta curves: Pallas, Vesta and their field elements Fp and Fq.
-description:           Provides the Pasta curves: Pallas, Vesta and their field elements Fp and Fq. 
-                       See the PastaCurves module below and/or the GitHub README.md for more details.
+synopsis:              Provides the Pasta curves -- Pallas, Vesta and their field elements Fp and Fq.
+description:           Provides the Pasta curves -- Pallas, Vesta and their field elements Fp and Fq. 
+                       See the PastaCurves module below and/or the GitHub repository README.md for more details.
 homepage:              https://github.com/integritychain/pasta-curves
 bug-reports:           https://github.com/integritychain/pasta-curves/issues
 license:               MIT

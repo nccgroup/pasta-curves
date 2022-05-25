@@ -8,4 +8,4 @@ The changelog is available [on GitHub][2].
 * Initially created.
 
 [1]: https://pvp.haskell.org
-[2]: https://github.com/eschorn@integritychain.com/pasta-curves/releases
+[2]: https://github.com/nccgroup/pasta-curves/releases

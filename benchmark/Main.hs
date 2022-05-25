@@ -1,3 +1,16 @@
+{-|
+Module      : benchmark.Main (internal)
+Description : Target for benchmarking build.
+Copyright   : (c) Eric Schorn, 2022
+Maintainer  : eric.schorn@nccgroup.com
+Stability   : experimental
+Portability : GHC
+SPDX-License-Identifier: MIT
+
+This modules provides a basic Main target for benchmarking builds. The suite of
+benchmarks will be expanded over time.
+-}
+
 {-# LANGUAGE NoImplicitPrelude, Safe #-}
 
 module Main (main) where

@@ -1,5 +1,5 @@
 {-|
-Module      : Crypto.PastaCurves.Pasta
+Module      : Crypto.PastaCurves.Pasta (internal)
 Description : Pasta-specific instantiation of parameterized curves and fields.
 Copyright   : (c) Eric Schorn, 2022
 Maintainer  : eric.schorn@nccgroup.com
@@ -67,7 +67,7 @@ hashToPallas :: ByteString -> Pallas
 hashToPallas msg = result 
   where
     (fe0, fe1) = hash2Field msg "z.cash:test" "pallas" :: (Fp, Fp)
-    q0 = mapToCurveSimpleSwu fe0 (fromInteger (-13)) :: IsoPallas
+    q0 = mapToCurveSimpleSwu fe0 (fromInteger (-13)) :: IsoPallas  -- -13 is Pasta specific magic constant
     q1 = mapToCurveSimpleSwu fe1 (fromInteger (-13)) :: IsoPallas
     (Projective xp yp zp) = pointAdd q0 q1 :: IsoPallas
     x = xp * inv0 zp ;  y = yp * inv0 zp

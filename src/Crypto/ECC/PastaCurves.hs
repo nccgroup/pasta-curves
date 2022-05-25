@@ -1,6 +1,6 @@
 {-|
 Module      : Crypto.PastaCurves.PastaCurves
-Description : Supports the instantiation of parameterized elliptic curves.
+Description : Provides the Pasta curve and field functionality.
 Copyright   : (c) Eric Schorn, 2022
 Maintainer  : eric.schorn@nccgroup.com
 Stability   : experimental

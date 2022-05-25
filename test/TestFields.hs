@@ -1,3 +1,5 @@
+-- Test fields...
+
 {-# LANGUAGE DataKinds, FlexibleInstances, NoImplicitPrelude, OverloadedStrings, Trustworthy #-}
 {-# OPTIONS_GHC -Wno-orphans -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Redundant bracket" #-}
@@ -15,13 +17,10 @@ import PastaCurves
 
 
 instance Arbitrary Fp where
-   arbitrary = do
-     fromInteger <$> choose (0, pallasPrime - 1)
-
+   arbitrary = fromInteger <$> choose (0, pallasPrime - 1)
 
 instance Arbitrary Fq where
-   arbitrary = do
-     fromInteger <$> choose (0, vestaPrime - 1)
+   arbitrary = fromInteger <$> choose (0, vestaPrime - 1)
 
 type Serdes = ByteString
 

@@ -1,6 +1,6 @@
 {-|
-Module      : Crypto.PastaCurves.Fields
-Description : Supports the instantiation of parameterized fields.
+Module      : Crypto.PastaCurves.Fields (internal)
+Description : Supports the instantiation of parameterized prime-modulus fields.
 Copyright   : (c) Eric Schorn, 2022
 Maintainer  : eric.schorn@nccgroup.com
 Stability   : experimental
@@ -8,9 +8,10 @@ Portability : GHC
 SPDX-License-Identifier: MIT
 
 This internal module provides a (multi-use) field element template with an arbitrary 
-modulus along with a variety of supporting functionality such as basic arithmetic, 
+prime modulus along with a variety of supporting functionality such as basic arithmetic,
 multiplicative  inverse, square testing, square root, serialization and deserialization,
-and hash2Field. The algorithms are NOT constant time.
+and hash2Field. The algorithms are NOT constant time; Safety and simplicity are the top 
+priorities.
 -}
 
 {-# LANGUAGE CPP, DataKinds, DerivingStrategies, KindSignatures, NoImplicitPrelude #-}
@@ -18,7 +19,7 @@ and hash2Field. The algorithms are NOT constant time.
 
 module Fields (Field(..), Fz(..), Num(..)) where
 
-import Prelude
+import Prelude hiding (concat, replicate)
 import Crypto.Hash (Blake2b_512 (Blake2b_512), hashWith)
 import Data.Bifunctor (bimap)
 import Data.Bits ((.|.), shiftL, shiftR)
@@ -31,11 +32,11 @@ import GHC.Word (Word8)
 import GHC.TypeLits (KnownNat, Nat, natVal)
 
 
--- | The `Fz (z::Nat)` field element (template) type includes a parameterized modulus of @z@.
-newtype Fz (z::Nat) = Fz Integer deriving stock (Eq)
+-- | The `Fz (z :: Nat)` field element (template) type includes a parameterized modulus of @z@.
+newtype Fz (z :: Nat) = Fz Integer deriving stock (Eq)
 
 
--- A CPP macro 'helper' to extract the modulus from (Fz z)
+-- A CPP macro 'helper' to extract the modulus from (Fz z).
 #define MOD natVal (Proxy :: Proxy z)
 
 
@@ -86,7 +87,7 @@ class (Num a, Eq a) => Field a where
   hash2Field :: ByteString -> String -> String -> (a, a)
 
   -- | The `inv0` function returns the multiplicative inverse as calculated by 
-  -- Fermat's Little Theorem (which maps 0 to 0).
+  -- Fermat's Little Theorem (mapping 0 to 0).
   inv0 :: a -> a
 
   -- | The `isSqr` function indicates whether the operand has a square root.
@@ -96,7 +97,8 @@ class (Num a, Eq a) => Field a where
   -- element as an Integer.
   sgn0 :: a -> Integer
 
-  -- | The `shiftR1` function effectively divides the field element by two.
+  -- | The `shiftR1` function effectively divides the field element by two by shifting
+  -- it right one bit.
   shiftR1 :: a -> a
 
   -- | The `Fields.sqrt` function implements the variable-time Tonelli-Shanks 
@@ -117,49 +119,61 @@ class (Num a, Eq a) => Field a where
 -- simple adapters to the more generic internal functions implemented further below.
 instance KnownNat z => Field (Fz z) where
 
-  -- Validated deserialization, returns a Maybe field element.
+  -- Validated deserialization, returns a Maybe field element. Follows section 2.3.6
+  -- of https://www.secg.org/sec1-v2.pdf
+  -- If ByteString is not the correct length or integer >= modulus, return Nothing. 
   -- fromBytes :: ByteString  -> Maybe a
-  fromBytesF bytes | Data.ByteArray.length bytes /= expLen || integer >= MOD = Nothing
-                  | otherwise = Just $ fromInteger integer
+  fromBytesF bytes | Data.ByteArray.length bytes /= corLen || integer >= MOD = Nothing
+                   | otherwise = Just $ fromInteger integer
     where
-      expLen = (7 + until ((MOD <) . (2^)) (+1) 0) `div` 8 :: Int
+      corLen = (7 + until ((MOD <) . (2^)) (+1) 0) `div` 8 :: Int
       integer = foldl' (\a b -> a `shiftL` 8 .|. fromIntegral b) 0 bytes :: Integer
 
 
-  -- Unvalidated deserialization, returns reduced field element.
+  -- Unvalidated deserialization (no limits wrt modulus), returns reduced field element.
   -- _fromBytes :: ByteString -> a
   _fromBytesF bytes = fromInteger $ foldl' (\a b -> shiftL a 8 .|. fromIntegral b) 0 bytes
 
 
-  -- Supports for the hash2Curve function, returns pair of field elements.
-  -- hash2field per Zcash Pasta Curve construction (similar but not idential to the CFRG 
-  -- hash-to-curve specification). Fortuitously, cryptonite sets hash personalization to 
-  -- all zeros, see https://github.com/haskell-crypto/cryptonite/issues/333
+  -- Field-level support for the hash2Curve function, returns a pair of field elements.
+  -- The hash2field construction is per Zcash Pasta Curve (which is very similar but not 
+  -- identical to the CFRG hash-to-curve specification). Fortuitously, cryptonite sets
+  -- the hash personalization to all zeros, see https://github.com/haskell-crypto/cryptonite/issues/333
+  -- Zcash/Pasta code https://github.com/zcash/pasta_curves/blob/main/src/hashtocurve.rs#L10
+  -- CFRG scheme (for ref) https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-14.html#name-hash_to_field-implementatio
+  -- Length of domain prefix and curve ID need to be less than 256 - 22 
   -- hash2Field :: ByteString -> String -> String -> (a, a)
-  hash2Field msg domPref curveId = bimap _fromBytesF _fromBytesF (digest1, digest2)
+  hash2Field msg domPref curveId 
+    | 22 + Prelude.length curveId + Prelude.length domPref > 255 = error "strings too long"
+    | otherwise = bimap _fromBytesF _fromBytesF (digest1, digest2)
     where
-      prefix = Data.ByteString.replicate 128 0
+      -- Calculate reusable prefix and suffix
+      prefix = replicate 128 0
       suffix = fromString (domPref ++ "-" ++ curveId ++ "_XMD:BLAKE2b_SSWU_RO_" ++
                [chr (22 + Prelude.length curveId + Prelude.length domPref)])
+      -- A little helper function to hash ByteStrings
       mkDigest :: ByteString -> ByteString
       mkDigest x = convert $ hashWith Blake2b_512 x
-      digest0 = mkDigest $ Data.ByteString.concat [prefix, msg, pack [0,0x80,0], suffix]
-      digest1 = mkDigest $ Data.ByteString.concat [digest0, pack [0x01], suffix]
+      -- Hash the message along with prefix, suffix, etc 
+      digest0 = mkDigest $ concat [prefix, msg, pack [0,0x80,0], suffix]
+      -- Hash the hash again
+      digest1 = mkDigest $ concat [digest0, pack [0x01], suffix]
+      -- Mix the two hashes together via bytewise XOR, then hash that too
       mix = xor digest0 digest1 :: ByteString
-      digest2 = mkDigest $ Data.ByteString.concat [mix, pack [0x02], suffix]
+      digest2 = mkDigest $ concat [mix, pack [0x02], suffix]
 
 
-  -- Multiplicative inverse, with 0 mapped to 0.
+  -- Multiplicative inverse, with 0 mapped to 0, via Fermat's Little Theorem
   -- inv0 :: a -> a
   inv0 (Fz a) = Fz $ _powMod a (MOD - 2) (MOD)
 
 
-  -- Determines if the operand has a square root.
+  -- Determines if the operand has a square root. Uses helper functions with Integers
   -- isSqr :: a -> Bool
   isSqr (Fz a) = _isSqr a (MOD)
 
 
-  -- Returns the least significant bit of the field element
+  -- Returns the least significant bit of the field element as an Integer
   -- sgn0 :: a -> Integer
   sgn0 (Fz a) = a `mod` 2
 
@@ -169,22 +183,24 @@ instance KnownNat z => Field (Fz z) where
   shiftR1 (Fz a) = Fz $ a `div` 2
 
 
-  -- Returns square root as Maybe field element. If problems, returns Nothing.
+  -- Returns square root as Maybe field element. If any problems, returns Nothing.
   -- sqrt :: a -> Maybe a
-  sqrt (Fz a) = fromInteger <$> _sqrtVt a (MOD) s p c
-    where  -- rewrite (modulus - 1) as p * 2**s 
+  sqrt (Fz a) = fromInteger <$> _sqrtVt a (MOD) s p c  -- Use helper function
+    where  
+      -- rewrite (modulus - 1) as p * 2**s 
       s = until ((/= 0) . ((MOD -1) `rem`) . (2^)) (+1) 0 - 1 :: Integer
       p = (MOD - 1) `div` (2^s)
-      z = head ([x | x <- [1..], not (_isSqr x (MOD))] ++ [0]) -- 1st non-square
-      c = _powMod z p (MOD)  -- \'fountain of fixes\'
+      -- Find first non-square and use that to prepare \'fountain of fixes\'
+      z = head ([x | x <- [1..], not (_isSqr x (MOD))] ++ [0])
+      c = _powMod z p (MOD)
 
 
-  -- Deserialization.
+  -- Deserialization. Follows section 2.3.7 of https://www.secg.org/sec1-v2.pdf
   -- toBytesF :: a -> ByteString
   toBytesF (Fz a) = pack $ reverse res
     where
-      expLen = fromInteger $ (7 + until ((MOD <) . (2^)) (+1) 0) `div` 8 :: Int
-      res = [fromIntegral (shiftR a (8*b)) | b <- [0..(expLen - 1)]] :: [Word8]
+      corLen = fromInteger $ (7 + until ((MOD <) . (2^)) (+1) 0) `div` 8 :: Int
+      res = [fromIntegral (shiftR a (8*b)) | b <- [0..(corLen - 1)]] :: [Word8]
 
 
   -- Returns the element as an Integer
@@ -211,7 +227,7 @@ _isSqr a q = (legendreSymbol == 0) || (legendreSymbol == 1)
   where legendreSymbol = _powMod a ((q - 1) `div` 2) q
 
 
--- | Variable-time Tonelli-Shanks algorithm
+-- | Variable-time Tonelli-Shanks algorithm. Works with any prime modulus.
 -- _sqrtVt :: operand -> modulus -> \'s\' -> \'p\' -> nonSquare
 _sqrtVt :: Integer -> Integer -> Integer -> Integer -> Integer -> Maybe Integer
 _sqrtVt 0 _ _ _ _ = Just 0

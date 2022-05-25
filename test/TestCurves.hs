@@ -1,3 +1,5 @@
+-- Test curves...
+
 {-# LANGUAGE FlexibleInstances, NoImplicitPrelude, Trustworthy #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
