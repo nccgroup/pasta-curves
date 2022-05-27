@@ -47,8 +47,8 @@ data Point (a :: Nat) (b :: Nat) (baseX :: Nat) (baseY :: Nat) f =
 instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
   Eq (Point a b baseX baseY f) where
     
-  (==) (Projective x1 y1 z1) (Projective x2 y2 z2) = 
-    (x1 * inv0 z1 == x2 * inv0 z2) && (y1 * inv0 z1 == y2 * inv0 z2)
+  -- x1/z1 == x2/z2 -> x1*z2/(x2*z1) == 1 -> same for y -> x1*z2/(x2*z1) == y1*z2/(y2*z1)  
+  (==) (Projective x1 y1 _z1) (Projective x2 y2 _z2) = x1 * y2 == x2 * y1
 
 
 -- | The `CurvePt` class provides the bulk of the functionality related to operations
