@@ -157,13 +157,15 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
 
   -- Serialize a point on the elliptic curve into a ByteString based on section 2.3.3
   -- of https://www.secg.org/sec1-v2.pdf. Only compressed points are supported.
-  toBytesC (Projective xp yp zp)
-    | zp == 0 = pack [0]
+  --toBytesC (Projective xp yp zp)
+  toBytesC pt
+    | not $ isOnCurve pt = error "trying to deserialize point not on curve" 
+    | _z pt == 0 = pack [0]
     | sgn0 y == 0 = cons 0x02 (toBytesF x)
     | otherwise   = cons 0x03 (toBytesF x)
     where  -- recover affine coordinates from original projective coordinates
-      x = xp * inv0 zp
-      y = yp * inv0 zp
+      x = (_x pt) * inv0 (_z pt)
+      y = (_y pt) * inv0 (_z pt)
 
 
 -- | The `Curve` class provides the elliptic point multiplication operation involving
