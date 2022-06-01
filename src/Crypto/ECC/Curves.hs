@@ -16,12 +16,14 @@ must be prime.
 
 {-# LANGUAGE CPP, DataKinds, DerivingStrategies, FlexibleInstances, PolyKinds #-}
 {-# LANGUAGE MultiParamTypeClasses, NoImplicitPrelude, ScopedTypeVariables, Safe #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
 
 module Curves (Curve(..), CurvePt(..), Point(..)) where
 
 import Prelude hiding (drop, length, sqrt)
 import Control.Monad (mfilter)
 import Data.ByteString (ByteString, cons, drop, index, length, pack)
+import Data.Kind (Type, Constraint)
 import Data.Maybe (fromJust)
 import Data.Typeable (Proxy (Proxy))
 import GHC.TypeLits (Nat, KnownNat, natVal)
@@ -31,6 +33,7 @@ import Fields (Field (..))
 -- short Weierstrass normal form. It also incorporates @baseX@ and @baseY@ coordinates
 -- for the base type. A point with different literals is considered a different type, so
 -- cannot be inadvertently mixed. *The curve order must be prime*.
+type Point :: Nat -> Nat -> Nat -> Nat -> Type -> Type
 data Point (a :: Nat) (b :: Nat) (baseX :: Nat) (baseY :: Nat) f = 
   Projective {_x :: f, _y :: f, _z :: f} deriving stock (Show) -- (x * inv0 z, y * inv0 z)
             
@@ -56,6 +59,7 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
 -- involving points on the elliptic curve. It supports both the Pallas and Vesta curve
 -- point type, as well as any other curves (using the arbitrary curve parameters). The
 -- curve order must be prime.
+type CurvePt :: Type -> Constraint
 class CurvePt a where
 
   -- | Returns the (constant) base point.
@@ -173,6 +177,7 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
 -- one `CurvePt` point on an elliptic curve and another `Field` field element as the
 -- scalar operand. It also provides the `mapToCurveSimpleSwu` which is used in the later
 -- stages of hashing-to-curve. It supports both the Pallas and Vesta curve point type.
+type Curve :: Type -> Type -> Constraint
 class (CurvePt a, Field b) => Curve a b where
 
   -- | The `pointMul` function multiplies a field element by a prime-order curve point. 

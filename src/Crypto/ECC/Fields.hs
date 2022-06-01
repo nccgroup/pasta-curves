@@ -15,7 +15,7 @@ priorities.
 -}
 
 {-# LANGUAGE CPP, DataKinds, DerivingStrategies, KindSignatures, NoImplicitPrelude #-}
-{-# LANGUAGE ScopedTypeVariables, Trustworthy #-}
+{-# LANGUAGE ScopedTypeVariables, StandaloneKindSignatures, Trustworthy #-}
 
 module Fields (Field(..), Fz(..), Num(..)) where
 
@@ -27,12 +27,14 @@ import Data.ByteArray (convert, length, xor)
 import Data.ByteString (concat, foldl', pack, replicate)
 import Data.ByteString.UTF8 (ByteString, fromString)
 import Data.Char (chr)
+import Data.Kind (Constraint, Type)
 import Data.Typeable (Proxy (Proxy))
 import GHC.Word (Word8)
 import GHC.TypeLits (KnownNat, Nat, natVal)
 
 
 -- | The `Fz (z :: Nat)` field element (template) type includes a parameterized modulus of @z@.
+type Fz :: Nat -> Type
 newtype Fz (z :: Nat) = Fz Integer deriving stock (Eq)
 
 
@@ -67,6 +69,7 @@ instance KnownNat z => Show (Fz z) where
 
 
 -- | The `Field` class provides useful support functionality for field elements.
+type Field :: Type -> Constraint
 class (Num a, Eq a) => Field a where
 
   -- | The `fromBytesF` function is the primary deserialization constructor which 
