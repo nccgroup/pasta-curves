@@ -63,7 +63,7 @@ instance KnownNat z => Show (Fz z) where
     where
       nibble :: Int -> Int
       nibble n = fromInteger $ shiftR a (n*4) `mod` 16
-      e = ((3 + until ((MOD <) . (2^)) (+1) 0) `div` 4) - 1 :: Int
+      e = ((3 + until ((MOD <) . (2 ^)) (+ 1) 0) `div` 4) - 1 :: Int
 
 
 -- | The `Field` class provides useful support functionality for field elements.
@@ -78,7 +78,7 @@ class (Num a, Eq a) => Field a where
   -- | The `_fromBytesF` function is the secondary deserialization constructor which
   -- consumes an unconstrained big-endian `ByteString` and returns a internally 
   -- reduced field element. This function is useful for random testing and 
-  -- hash2Field-style funtions.
+  -- hash2Field-style functions.
   _fromBytesF :: ByteString -> a
 
   -- | The `hash2Field` function provides intermediate functionality that is suitable
@@ -93,12 +93,12 @@ class (Num a, Eq a) => Field a where
   -- | The `isSqr` function indicates whether the operand has a square root.
   isSqr :: a -> Bool
 
-  -- | The `sgn0` function effectively returns the least significant bit of the field
-  -- element as an Integer.
+  -- | The `sgn0` function returns the least significant bit of the field element as an
+  -- Integer.
   sgn0 :: a -> Integer
 
-  -- | The `shiftR1` function effectively divides the field element by two by shifting
-  -- it right one bit.
+  -- | The `shiftR1` function shifts the field element one bit to the right, effectively 
+  -- dividing it by two (and discarding the remainder).
   shiftR1 :: a -> a
 
   -- | The `Fields.sqrt` function implements the variable-time Tonelli-Shanks 
@@ -126,7 +126,7 @@ instance KnownNat z => Field (Fz z) where
   fromBytesF bytes | Data.ByteArray.length bytes /= corLen || integer >= MOD = Nothing
                    | otherwise = Just $ fromInteger integer
     where
-      corLen = (7 + until ((MOD <) . (2^)) (+1) 0) `div` 8 :: Int
+      corLen = (7 + until ((MOD <) . (2 ^)) (+ 1) 0) `div` 8 :: Int
       integer = foldl' (\a b -> a `shiftL` 8 .|. fromIntegral b) 0 bytes :: Integer
 
 
@@ -188,8 +188,8 @@ instance KnownNat z => Field (Fz z) where
   sqrt (Fz a) = fromInteger <$> _sqrtVt a (MOD) s p c  -- Use helper function
     where  
       -- rewrite (modulus - 1) as p * 2**s 
-      s = until ((/= 0) . ((MOD -1) `rem`) . (2^)) (+1) 0 - 1 :: Integer
-      p = (MOD - 1) `div` (2^s)
+      s = until ((/= 0) . ((MOD -1) `rem`) . (2 ^)) (+ 1) 0 - 1 :: Integer
+      p = (MOD - 1) `div` (2 ^ s)
       -- Find first non-square and use that to prepare \'fountain of fixes\'
       z = head ([x | x <- [1..], not (_isSqr x (MOD))] ++ [0])
       c = _powMod z p (MOD)
@@ -199,7 +199,7 @@ instance KnownNat z => Field (Fz z) where
   -- toBytesF :: a -> ByteString
   toBytesF (Fz a) = pack $ reverse res
     where
-      corLen = fromInteger $ (7 + until ((MOD <) . (2^)) (+1) 0) `div` 8 :: Int
+      corLen = fromInteger $ (7 + until ((MOD <) . (2 ^)) (+ 1) 0) `div` 8 :: Int
       res = [fromIntegral (shiftR a (8*b)) | b <- [0..(corLen - 1)]] :: [Word8]
 
 
@@ -238,14 +238,13 @@ _sqrtVt a q s p c = Just result
     t = _powMod a p q
     r = _powMod a ((p + 1) `div` 2) q
     result = loopy t r c s
+    loopy :: Integer -> Integer -> Integer -> Integer -> Integer
+    loopy tt  _  _ ss | tt == 0 || ss == 0 = 0
+    loopy  1 rr  _  _ = rr
+    loopy tt rr cc ss = loopy t_n r_n c_n s_n  -- read _n as _next
       where
-        loopy :: Integer -> Integer -> Integer -> Integer -> Integer
-        loopy tt  _  _ ss | tt == 0 || ss == 0 = 0
-        loopy  1 rr  _  _ = rr
-        loopy tt rr cc ss = loopy t_n r_n c_n s_n
-          where
-            s_n = head ([i | i <- [1..(ss - 1)], _powMod tt (2^i) q == 1] ++ [0])
-            ff = _powMod cc (2^(ss - s_n - 1)) q
-            r_n = rr * ff `mod` q
-            t_n = (tt * _powMod ff 2 q) `mod` q
-            c_n = _powMod cc (2^(ss - s_n)) q
+        s_n = head ([i | i <- [1..(ss - 1)], _powMod tt (2 ^ i) q == 1] ++ [0])
+        ff = _powMod cc (2 ^ (ss - s_n - 1)) q
+        r_n = rr * ff `mod` q
+        t_n = (tt * _powMod ff 2 q) `mod` q
+        c_n = _powMod cc (2 ^ (ss - s_n)) q

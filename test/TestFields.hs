@@ -28,14 +28,14 @@ fieldProps :: TestTree
 fieldProps = testGroup "Testing Field properties via QuickCheck" [
   testProperty "Fp arith"  $ \a b c -> a*(b-c) - a*b + a*c == (0 :: Fp),
   testProperty "Fp inv0"   $ \a -> a * inv0 a == (1 :: Fp),
-  testProperty "Fp sqrt"   $ \a -> fromJust (sqrt (a*a))^(2 :: Integer) == (a^(2 :: Integer) :: Fp),
+  testProperty "Fp sqrt"   $ \a -> fromJust (sqrt (a*a)) ^ (2 :: Integer) == (a ^ (2 :: Integer) :: Fp),
   testProperty "Fp isSqr"  $ \a -> isSqr (a*a :: Fp),
   testProperty "Fp serdes" $ \a -> fromBytesF (toBytesF a) == Just (a :: Fp),
   testProperty "Fp shiftR1" $ \a -> shiftR1 a == fromInteger (toI (a :: Fp) `div` 2),
 
   testProperty "Fq arith"  $ \a b c -> a*(b-c) - a*b + a*c == (0 :: Fq),
   testProperty "Fq inv0"   $ \a -> a * inv0 a == (1 :: Fq),
-  testProperty "Fq sqrt"   $ \a -> fromJust (sqrt (a*a))^(2 :: Integer) == (a^(2 :: Integer)  :: Fq),
+  testProperty "Fq sqrt"   $ \a -> fromJust (sqrt (a*a)) ^ (2 :: Integer) == (a ^ (2 :: Integer)  :: Fq),
   testProperty "Fq isSqr"  $ \a -> isSqr (a*a :: Fq),
   testProperty "Fq serdes" $ \a -> fromBytesF (toBytesF a) == Just (a :: Fq),
   testProperty "Fq shiftR1" $ \a -> shiftR1 a == fromInteger (toI (a :: Fq) `div` 2)

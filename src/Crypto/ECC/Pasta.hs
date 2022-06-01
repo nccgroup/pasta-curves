@@ -53,11 +53,11 @@ type Fq = Fz 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001
 type Vesta  = (Point 0 5 1 0x26bc999156dd5194ec49b1c551768ab375785e7ce00906d13e0361674fd8959f Fq)
 
 
--- This is a curve that is isogenous to Pallas, but with a*b != 0; base parms are unused
+-- This is a curve that is isogenous to Pallas, but with a*b != 0; base params are unused
 type IsoPallas = (Point 0x18354a2eb0ea8c9c49be2d7258370742b74134581a27a59f92bb4b0b657a014b 1265 0 0 Fp)
 
 
--- This is a curve that is isogenous to Vesta, but with a*b != 0; base parms are unused
+-- This is a curve that is isogenous to Vesta, but with a*b != 0; base params are unused
 type IsoVesta = (Point 0x267f9b2ee592271a81639c4d96f787739673928c7d01b212c515ad7242eaa6b1 1265 0 0 Fq)
 
 
@@ -71,10 +71,10 @@ hashToPallas msg = result
     q1 = mapToCurveSimpleSwu fe1 (fromInteger (-13)) :: IsoPallas
     (Projective xp yp zp) = pointAdd q0 q1 :: IsoPallas
     x = xp * inv0 zp ;  y = yp * inv0 zp
-    xTop = head isoPallasVecs * x^(3::Integer) + isoPallasVecs !! 1 * x^(2::Integer) + isoPallasVecs !! 2 * x + isoPallasVecs !! 3
+    xTop = head isoPallasVecs * x ^ (3::Integer) + isoPallasVecs !! 1 * x ^ (2::Integer) + isoPallasVecs !! 2 * x + isoPallasVecs !! 3
     xBot = x^(2::Integer) + isoPallasVecs !! 4 * x + isoPallasVecs !! 5
-    yTop = isoPallasVecs !! 6 * x^(3::Integer) + isoPallasVecs !! 7 * x^(2::Integer) + isoPallasVecs !! 8 * x + isoPallasVecs !! 9
-    yBot = x^(3::Integer) + isoPallasVecs !! 10 * x^(2::Integer) + isoPallasVecs !! 11 * x + isoPallasVecs !! 12 
+    yTop = isoPallasVecs !! 6 * x ^ (3::Integer) + isoPallasVecs !! 7 * x ^ (2::Integer) + isoPallasVecs !! 8 * x + isoPallasVecs !! 9
+    yBot = x ^ (3::Integer) + isoPallasVecs !! 10 * x ^ (2::Integer) + isoPallasVecs !! 11 * x + isoPallasVecs !! 12 
     proposed = Projective (xTop * inv0 xBot) (y * yTop * inv0 yBot) 1 :: Pallas
     result = if isOnCurve proposed then proposed else error "hashed to Pallas non-point"
 

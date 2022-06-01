@@ -7,7 +7,7 @@ Stability   : experimental
 Portability : GHC
 SPDX-License-Identifier: MIT
 
-This modules provides a basic Main target for benchmarking builds. The suite of
+This module provides a basic Main target for benchmarking builds. The suite of
 benchmarks will be expanded over time.
 -}
 

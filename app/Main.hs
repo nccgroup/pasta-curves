@@ -7,7 +7,7 @@ Stability   : experimental
 Portability : GHC
 SPDX-License-Identifier: MIT
 
-This modules provides a trivial Main target for application executable builds.
+This module provides a trivial Main target for application executable builds.
 -}
 
 {-# LANGUAGE NoImplicitPrelude, Safe #-}

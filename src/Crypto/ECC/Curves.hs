@@ -8,7 +8,7 @@ Portability : GHC
 SPDX-License-Identifier: MIT
 
 This internal module provides an elliptic curve (multi-use) template from arbitrary
-paramaters, along with a variety of supporting functionality such as point addition, 
+parameters, along with a variety of supporting functionality such as point addition, 
 multiplication, negation, equality, serialization and deserialization. The algorithms
 are NOT constant time. Safety and simplicity are the top priorities; the curve order
 must be prime.
@@ -26,7 +26,6 @@ import Data.Maybe (fromJust)
 import Data.Typeable (Proxy (Proxy))
 import GHC.TypeLits (Nat, KnownNat, natVal)
 import Fields (Field (..))
-
 
 -- | The `Point` type incorporates type literals @a@ and @b@ of an elliptic curve in the
 -- short Weierstrass normal form. It also incorporates @baseX@ and @baseY@ coordinates
@@ -47,13 +46,15 @@ data Point (a :: Nat) (b :: Nat) (baseX :: Nat) (baseY :: Nat) f =
 instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
   Eq (Point a b baseX baseY f) where
     
-  -- x1/z1 == x2/z2 -> x1*z2/(x2*z1) == 1 -> same for y -> x1*z2/(x2*z1) == y1*z2/(y2*z1)  
-  (==) (Projective x1 y1 _z1) (Projective x2 y2 _z2) = x1 * y2 == x2 * y1
+  -- x1/z1 == x2/z2 -> x1*z2/(x2*z1) == 1 -> same for y -> x1*z2/(x2*z1) == y1*z2/(y2*z1)
+  -- all point(s) at infinity are equal  
+  (==) (Projective x1 y1 z1) (Projective x2 y2 z2) = 
+    (z1 /= 0 && z2 /= 0 && x1 * y2 == x2 * y1) || (z1 == 0 && z2 == 0)
 
 
 -- | The `CurvePt` class provides the bulk of the functionality related to operations
 -- involving points on the elliptic curve. It supports both the Pallas and Vesta curve
--- point type, as well as any other curves (using the aribitrary curve parameters). The
+-- point type, as well as any other curves (using the arbitrary curve parameters). The
 -- curve order must be prime.
 class CurvePt a where
 
@@ -103,26 +104,26 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
           x = fromBytesF (drop 1 bytes) :: Maybe f
           -- see what sgn0 we are expecting for the final y-coordinate
           sgn0y = if index bytes 0 == 0x02 then 0 else 1 :: Integer
-          -- calculate y squared from deserialied x-coordinate and curve constants
-          alpha = (\t -> t^(3 :: Integer) + ((fromInteger $ A) :: f) * t + ((fromInteger $ B) :: f)) <$> x
+          -- calculate y squared from deserialized x-coordinate and curve constants
+          alpha = (\t -> t ^ (3 :: Integer) + ((fromInteger $ A) :: f) * t + ((fromInteger $ B) :: f)) <$> x
           -- get square root (thus a proposed y-coordinate)
           beta = alpha >>= sqrt
           -- adjust which root is selected for y-coordinate
           y =  (\t -> if sgn0 t == sgn0y then t else negate t) <$> beta
           -- propose a deserialized point (which is on the curve by construction)
           proposed = (Projective <$> x <*> y <*> Just 1) :: Maybe (Point a b baseX baseY f)
-          -- re-validate it is on the curve and return; a sqrt fail propogates through Maybes
+          -- re-validate it is on the curve and return; a sqrt fail propagates through Maybes
           result = mfilter isOnCurve proposed
   -- Otherwise we fail (bad length, bad prefix etc) and return Nothing
   fromBytesC _ = Nothing
 
 
   -- Validate via projective form of Weierstrass equation.
-  isOnCurve (Projective x y z) = z * y^(2 :: Integer) == x^(3 :: Integer) + 
-    fromInteger (A) * x * z^(2 :: Integer) + fromInteger (B) * z^(3 :: Integer)
+  isOnCurve (Projective x y z) = z * y ^ (2 :: Integer) == x ^ (3 :: Integer) + 
+    fromInteger (A) * x * z ^ (2 :: Integer) + fromInteger (B) * z ^ (3 :: Integer)
 
 
-  -- Point negation is flippling y-coordinate.
+  -- Point negation is flipping y-coordinate.
   negatePt (Projective x y z) = Projective x (- y) z
 
 
@@ -132,7 +133,7 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
 
   -- See https://eprint.iacr.org/2015/1060.pdf page 8; Algorithm 1: Complete, projective 
   -- point addition for arbitrary prime order short Weierstrass curves 
-  -- E/Fq : y^2 = x^3 + ax + b. The code has the intermdiate additions 'squashed out'
+  -- E/Fq : y^2 = x^3 + ax + b. The code has the intermediate additions 'squashed out'
   pointAdd (Projective x1 y1 z1) (Projective x2 y2 z2) = result
     where
       m0 = x1 * x2
@@ -164,8 +165,8 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
     | sgn0 y == 0 = cons 0x02 (toBytesF x)
     | otherwise   = cons 0x03 (toBytesF x)
     where  -- recover affine coordinates from original projective coordinates
-      x = (_x pt) * inv0 (_z pt)
-      y = (_y pt) * inv0 (_z pt)
+      x = _x pt * inv0 (_z pt)
+      y = _y pt * inv0 (_z pt)
 
 
 -- | The `Curve` class provides the elliptic point multiplication operation involving
@@ -191,7 +192,7 @@ instance (Field f1, Field f2, KnownNat a, KnownNat b, KnownNat baseX, KnownNat b
   Curve (Point a b baseX baseY f1) f2 where
 
 
-  -- Classic double and add algorithm
+  -- Classic double and add algorithm; will add a dedicated point double routine in the future
   pointMul s pt = pointMul' s pt neutral
     where
       pointMul' :: f2 -> Point a b baseX baseY f1 -> Point a b baseX baseY f1 -> Point a b baseX baseY f1
@@ -210,12 +211,12 @@ instance (Field f1, Field f2, KnownNat a, KnownNat b, KnownNat baseX, KnownNat b
       u = (fromInteger $ toI fu)  :: f1  -- pesky type conversion 
       z = (fromInteger $ toI fz)  :: f1
       -- See https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-14.html#section-6.6.2-7
-      tv1 = inv0 (z^(2 :: Integer) * u^(4 :: Integer) + z * u^(2 :: Integer))
+      tv1 = inv0 (z ^ (2 :: Integer) * u ^ (4 :: Integer) + z * u ^ (2 :: Integer))
       x1a = (fromInteger ((-1) * B) * inv0 (fromInteger (A))) * (1 + tv1)
       x1 = if toI tv1 == 0 then fromInteger (B) * inv0 (z * fromInteger (A))  else x1a 
-      gx1 = x1^(3 :: Integer) + fromInteger (A) * x1 + fromInteger (B)
-      x2 = z * u^(2 :: Integer) * x1
-      gx2 = x2^(3 :: Integer) + fromInteger (A) * x2 + fromInteger (B)
+      gx1 = x1 ^ (3 :: Integer) + fromInteger (A) * x1 + fromInteger (B)
+      x2 = z * u ^ (2 :: Integer) * x1
+      gx2 = x2 ^ (3 :: Integer) + fromInteger (A) * x2 + fromInteger (B)
       (x, ya) = if isSqr gx1 then (x1, fromJust $ sqrt gx1) else (x2, fromJust $ sqrt gx2)
       y = if sgn0 u /= sgn0 ya then -ya else ya
       result = Projective x y 1 :: Point a b baseX baseY f1
