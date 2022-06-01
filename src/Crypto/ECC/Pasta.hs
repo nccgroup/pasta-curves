@@ -12,7 +12,7 @@ also includes `hashToPallas` and `hashToVesta` functionality (which in turn incl
 two isogenous curves, mapping functionality, and coefficient vectors).
 -}
 
-{-# LANGUAGE DataKinds, NoImplicitPrelude, Safe, StandaloneKindSignatures #-}
+{-# LANGUAGE DataKinds, NoImplicitPrelude, Safe #-}
 
 module Pasta (Fp, Fq, Num(..), Pallas, Vesta, Curve(..), CurvePt(..), Field(..), hashToPallas, 
   hashToVesta, pallasPrime, vestaPrime) where
@@ -21,14 +21,12 @@ import Prelude
 import Curves (Curve(..), CurvePt(..), Point(..))
 import Fields (Fz, Field(..))
 import Data.ByteString.UTF8 (ByteString)
-import Data.Kind (Type)
 
 
 -- | `Fp` is the field element used as a coordinate in the Pallas elliptic curve.
 -- It is a type synonym for the internal `Fields.Fz` type, parameterized with the 
 -- correct modulus. It is also typically used as a scalar to multiply a Vesta elliptic
 -- curve point. Note that pointMul does not enforce particular scalar/point combinations.
-type Fp :: Type
 type Fp  = Fz 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001
 
 
@@ -37,7 +35,6 @@ type Fp  = Fz 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001
 -- a type synonym for the internal `Curves.Point` type, parameterized with the curve\s 
 -- @a@ and @b@ values and the affine base point as @base_x@ and @base_y@. The underlying
 -- point is of type @Point a b base_x base_y field@.
-type Pallas :: Type
 type Pallas = (Point 0 5 1 0x248b4a5cf5ed6c83ac20560f9c8711ab92e13d27d60fb1aa7f5db6c93512d546 Fp)
 
 
@@ -45,7 +42,6 @@ type Pallas = (Point 0 5 1 0x248b4a5cf5ed6c83ac20560f9c8711ab92e13d27d60fb1aa7f5
 -- It is a type synonym for the internal `Fields.Fz` type, parameterized with the 
 -- correct modulus. It is also typically used as a scalar to multiply a Pallas elliptic 
 -- curve point. Note that pointMul does not enforce particular scalar/point combinations.
-type Fq :: Type
 type Fq = Fz 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001
 
 
@@ -54,17 +50,14 @@ type Fq = Fz 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001
 -- a type synonym for the internal `Curves.Point` type, parameterized with the curve\s 
 -- @a@ and @b@ values and the affine base point as @base_x@ and @base_y@.  The underlying
 -- point is of type @Point a b base_x base_y field@.
-type Vesta :: Type
 type Vesta  = (Point 0 5 1 0x26bc999156dd5194ec49b1c551768ab375785e7ce00906d13e0361674fd8959f Fq)
 
 
 -- This is a curve that is isogenous to Pallas, but with a*b != 0; base params are unused
-type IsoPallas :: Type
 type IsoPallas = (Point 0x18354a2eb0ea8c9c49be2d7258370742b74134581a27a59f92bb4b0b657a014b 1265 0 0 Fp)
 
 
 -- This is a curve that is isogenous to Vesta, but with a*b != 0; base params are unused
-type IsoVesta :: Type
 type IsoVesta = (Point 0x267f9b2ee592271a81639c4d96f787739673928c7d01b212c515ad7242eaa6b1 1265 0 0 Fq)
 
 
