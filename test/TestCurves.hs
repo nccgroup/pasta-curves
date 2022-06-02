@@ -6,16 +6,16 @@
 module TestCurves (curveProps, testPOI, testHashToPallas, testHashToVesta, testBadC) where
 
 import Prelude hiding (exp)
-import Data.ByteString.UTF8 (fromString)
 import Data.ByteString (pack)
+import Data.ByteString.UTF8 (fromString)
 import Data.Maybe (fromJust, isNothing)
+import Data.Word (Word8)
 import Test.Tasty (TestTree, testGroup)
-import Test.Tasty.QuickCheck (Arbitrary(..), testProperty)
 import Test.Tasty.HUnit (assertBool, testCase)
+import Test.Tasty.QuickCheck (Arbitrary(..), testProperty)
 import TestFields ()
 import PastaCurves
 import Curves (Point(Projective))
-import Data.Word (Word8)
 
 
 instance Arbitrary Pallas where

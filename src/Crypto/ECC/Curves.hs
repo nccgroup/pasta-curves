@@ -27,6 +27,7 @@ import Data.Typeable (Proxy (Proxy))
 import GHC.TypeLits (Nat, KnownNat, natVal)
 import Fields (Field (..))
 
+
 -- | The `Point` type incorporates type literals @a@ and @b@ of an elliptic curve in the
 -- short Weierstrass normal form. It also incorporates @baseX@ and @baseY@ coordinates
 -- for the base type. A point with different literals is considered a different type, so

@@ -22,6 +22,6 @@ main = do
   print "Sample executable for pasta-curves"
   print exampleFp
   print exampleFq
-  print examplePallas
-  print exampleVesta
+  print examplePallasPt
+  print exampleVestaPt
 

@@ -9,19 +9,18 @@ module TestFields (fieldProps, testBadF, testGoodF) where
 import Prelude hiding (sqrt)
 import Data.ByteString (pack)
 import Data.Maybe (fromJust, isNothing)
-import Test.Tasty (TestTree, testGroup)
-import Test.Tasty.QuickCheck (Arbitrary(..), choose, testProperty)
-
-import PastaCurves
-import Test.Tasty.HUnit (testCase, assertBool)
 import Data.Word (Word8)
+import Test.Tasty (TestTree, testGroup)
+import Test.Tasty.HUnit (testCase, assertBool)
+import Test.Tasty.QuickCheck (Arbitrary(..), choose, testProperty)
+import PastaCurves
 
 
 instance Arbitrary Fp where
-   arbitrary = fromInteger <$> choose (0, pallasPrime - 1)
+   arbitrary = fromInteger <$> choose (0, 2 ^ (512::Integer))
 
 instance Arbitrary Fq where
-   arbitrary = fromInteger <$> choose (0, vestaPrime - 1)
+   arbitrary = fromInteger <$> choose (0, 2 ^ (512::Integer))
 
 
 fieldProps :: TestTree

@@ -9,13 +9,14 @@ SPDX-License-Identifier: MIT
 
 This internal module instantiates the specific curves and fields specific to Pasta. It
 also includes `hashToPallas` and `hashToVesta` functionality (which in turn includes
-two isogenous curves, mapping functionality, and coefficient vectors).
+two isogenous curves, mapping functionality, and coefficient vectors). The algorithms 
+are NOT constant time; Safety and simplicity are the top priorities.
 -}
 
 {-# LANGUAGE DataKinds, NoImplicitPrelude, Safe #-}
 
-module Pasta (Fp, Fq, Num(..), Pallas, Vesta, Curve(..), CurvePt(..), Field(..), hashToPallas, 
-  hashToVesta, pallasPrime, vestaPrime) where
+module Pasta (Fp, Fq, Num(..), Pallas, Vesta, Curve(..), CurvePt(..), Field(..), 
+  hashToPallas, hashToVesta, pallasPrime, vestaPrime) where
 
 import Prelude
 import Curves (Curve(..), CurvePt(..), Point(..))
@@ -62,7 +63,7 @@ type IsoVesta = (Point 0x267f9b2ee592271a81639c4d96f787739673928c7d01b212c515ad7
 
 
 -- | The `hashToPallas` function takes an arbitrary `ByteString` and maps it to a valid 
--- point on the Pallas elliptic curve (of unknown related to the base point).
+-- point on the Pallas elliptic curve (of unknown relation to the base point).
 hashToPallas :: ByteString -> Pallas
 hashToPallas msg = result 
   where
@@ -80,7 +81,7 @@ hashToPallas msg = result
 
 
 -- | The `hashToVesta` function takes an arbitrary `ByteString` and maps it to a valid 
--- point on the Vesta elliptic curve (of unknown related to the base point).
+-- point on the Vesta elliptic curve (of unknown relation to the base point).
 hashToVesta :: ByteString -> Vesta
 hashToVesta msg = result 
   where

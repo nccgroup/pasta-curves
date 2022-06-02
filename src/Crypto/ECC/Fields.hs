@@ -49,7 +49,7 @@ instance KnownNat z => Num (Fz z) where
   
   (-) (Fz a) (Fz b) = fromInteger (a - b)
   
-  (*) (Fz a) (Fz b) = fromInteger (a * b)
+  (*) (Fz a) (Fz b) = {-# SCC "fieldMul" #-} fromInteger (a * b)
   
   abs = error "abs: not implemented"
   
