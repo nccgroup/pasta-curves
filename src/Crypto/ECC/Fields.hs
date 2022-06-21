@@ -43,14 +43,21 @@ newtype Fz (z :: Nat) = Fz Integer deriving stock (Eq)
 -- | The `Fz` type is an instance of the `Num` class.
 instance KnownNat z => Num (Fz z) where
 
-  fromInteger a = Fz $ a `mod` MOD
-    
-  (+) (Fz a) (Fz b) = fromInteger (a + b)
+  fromInteger a = {-# SCC "fieldFrom" #-} Fz $ a `mod` MOD
+  {-# INLINE fromInteger #-}
+   
+  (+) (Fz a) (Fz b) = {-# SCC "fieldAdd" #-} Fz res
+    where
+      sum0 = a + b :: Integer
+      res = if sum0 < MOD then sum0 else sum0 - MOD :: Integer
+  {-# INLINE (+) #-}
   
-  (-) (Fz a) (Fz b) = fromInteger (a - b)
-  
+  (-) (Fz a) (Fz b) = {-# SCC "fieldSub" #-} fromInteger (a - b)
+  {-# INLINE (-) #-}
+
   (*) (Fz a) (Fz b) = {-# SCC "fieldMul" #-} fromInteger (a * b)
-  
+  {-# INLINE (*) #-}
+
   abs = error "abs: not implemented"
   
   signum = error "signum: not implemented"

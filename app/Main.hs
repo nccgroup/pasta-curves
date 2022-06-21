@@ -20,8 +20,12 @@ import PastaCurves
 main :: IO ()
 main = do
   print "Sample executable for pasta-curves"
-  print exampleFp
-  print exampleFq
-  print examplePallasPt
-  print exampleVestaPt
+  print $ pointMul (2 ^ (200::Integer) - 1 :: Fq) (base :: Pallas)
+  -- print exampleFp
+  -- print exampleFq
+  -- print examplePallasPt
+  -- print exampleVestaPt
 
+{- For profiling
+  cabal v2-run --enable-profiling exes --  +RTS -p
+-}
