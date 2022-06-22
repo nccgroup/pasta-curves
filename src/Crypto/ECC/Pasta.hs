@@ -27,7 +27,7 @@ import Data.ByteString.UTF8 (ByteString)
 -- | `Fp` is the field element used as a coordinate in the Pallas elliptic curve.
 -- It is a type synonym for the internal `Fields.Fz` type, parameterized with the 
 -- correct modulus. It is also typically used as a scalar to multiply a Vesta elliptic
--- curve point. Note that pointMul does not enforce particular scalar/point combinations.
+-- curve point. Note that pointMul does not enforce specific scalar/point combinations.
 type Fp  = Fz 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001
 
 
@@ -42,7 +42,7 @@ type Pallas = (Point 0 5 1 0x248b4a5cf5ed6c83ac20560f9c8711ab92e13d27d60fb1aa7f5
 -- | `Fq` is the field element used as a coordinate in the Vesta elliptic curve.
 -- It is a type synonym for the internal `Fields.Fz` type, parameterized with the 
 -- correct modulus. It is also typically used as a scalar to multiply a Pallas elliptic 
--- curve point. Note that pointMul does not enforce particular scalar/point combinations.
+-- curve point. Note that pointMul does not enforce specific scalar/point combinations.
 type Fq = Fz 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001
 
 
@@ -54,11 +54,11 @@ type Fq = Fz 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001
 type Vesta  = (Point 0 5 1 0x26bc999156dd5194ec49b1c551768ab375785e7ce00906d13e0361674fd8959f Fq)
 
 
--- This is a curve that is isogenous to Pallas, but with a*b != 0; base params are unused
+-- This is a curve that is isogenous to Pallas, but with a*b != 0; base point params are unused
 type IsoPallas = (Point 0x18354a2eb0ea8c9c49be2d7258370742b74134581a27a59f92bb4b0b657a014b 1265 0 0 Fp)
 
 
--- This is a curve that is isogenous to Vesta, but with a*b != 0; base params are unused
+-- This is a curve that is isogenous to Vesta, but with a*b != 0; base point params are unused
 type IsoVesta = (Point 0x267f9b2ee592271a81639c4d96f787739673928c7d01b212c515ad7242eaa6b1 1265 0 0 Fq)
 
 
@@ -90,7 +90,6 @@ hashToVesta msg = result
     q1 = mapToCurveSimpleSwu fe1 (fromInteger (-13)) :: IsoVesta
     (Projective xp yp zp) = pointAdd q0 q1 :: IsoVesta
     x = xp * inv0 zp ;  y = yp * inv0 zp
-
     xTop = head isoVestaVecs * x ^ (3::Integer) + isoVestaVecs !! 1 * x ^ (2::Integer) + isoVestaVecs !! 2 * x + isoVestaVecs !! 3
     xBot = x ^ (2::Integer) + isoVestaVecs !! 4 * x + isoVestaVecs !! 5
     yTop = isoVestaVecs !! 6 * x ^ (3::Integer) + isoVestaVecs !! 7 * x ^ (2::Integer) + isoVestaVecs !! 8 * x + isoVestaVecs !! 9

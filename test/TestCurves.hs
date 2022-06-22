@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleInstances, NoImplicitPrelude, Trustworthy #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module TestCurves (curveProps, testPOI, testHashToPallas, testHashToVesta, testBadC) where
+module TestCurves (curveProps, testPOI, testHashToPallas, testHashToVesta, testBadC, testPallasEq) where
 
 import Prelude hiding (exp)
 import Data.ByteString (pack)
@@ -80,6 +80,22 @@ testBadC = testCase "bad decode" $ do
   let notBaseBytes = pack $ ((0x03 :: Word8) : replicate 31 0) ++ [0x01 :: Word8]
   let act6 = fromBytesC notBaseBytes :: Maybe Pallas
   assertBool "bad not base" $ fromJust act6 /= (base :: Pallas)
+
+
+testPallasEq :: TestTree
+testPallasEq = testCase "bad Eq" $ do
+  let x1 = 0x2e341f9b583ed433336de60408dc32487b37d8076f09ed1cd25e4f406c46f0bc :: Fp
+  let y1 = 0x285a83a7d3a0d903aa1bb19eb6894d7dca04b13687abf05423ce54362de3d5de :: Fp
+  let z1 = 1 :: Fp
+  let x2 = 0x24024b8e1f42b83c83c211405147f74209b30aca025efc773734e7163798eb77 :: Fp
+  let y2 = 0x27db4a65be914fba5eac9c613554e58b4469b8eb344e937511f48b1780d9ab70 :: Fp
+  let z2 = 1 :: Fp
+  let x3 = 0x1dc72099914e05a28ce349b110c6f52291eb1cec24643bbed1fb489f7cb41f47 :: Fp
+  let y3 = 0x01b1f3ee3ec752c0a9022c1c2e178d00c10aa97417236f91a49ab232ec347c4f :: Fp
+  let z3 = 1 :: Fp
+  assertBool "Bad Eq1" $ ((Projective x1 y1 z1) :: Pallas) /= (Projective x2 y2 z2)
+  assertBool "Bad Eq2" $ ((Projective x2 y2 z2) :: Pallas) /= (Projective x3 y3 z3)
+  assertBool "Bad Eq3" $ ((Projective x3 y3 z3) :: Pallas) /= (Projective x1 y1 z1)
 
 
 testHashToPallas :: TestTree

@@ -8,14 +8,14 @@ Portability : GHC
 SPDX-License-Identifier: MIT
 
 This internal module provides an elliptic curve (multi-use) template from arbitrary
-parameters, along with a variety of supporting functionality such as point addition, 
-multiplication, negation, equality, serialization and deserialization. The algorithms
-are NOT constant time. Safety and simplicity are the top priorities; the curve order
-must be prime.
+parameters for a curve of odd order, along with a variety of supporting functionality 
+such as point addition, multiplication, negation, equality, serialization and 
+deserialization. The algorithms are NOT constant time. Safety and simplicity are the 
+top priorities; the curve order must be prime (and so affine curve point y-cord != 0).
 -}
 
 {-# LANGUAGE CPP, DataKinds, DerivingStrategies, FlexibleInstances, PolyKinds #-}
-{-# LANGUAGE MultiParamTypeClasses, NoImplicitPrelude, ScopedTypeVariables, Safe #-}
+{-# LANGUAGE MultiParamTypeClasses, NoImplicitPrelude, Safe, ScopedTypeVariables #-}
 
 module Curves (Curve(..), CurvePt(..), Point(..)) where
 
@@ -31,7 +31,7 @@ import Fields (Field (..))
 -- | The `Point` type incorporates type literals @a@ and @b@ of an elliptic curve in the
 -- short Weierstrass normal form. It also incorporates @baseX@ and @baseY@ coordinates
 -- for the base type. A point with different literals is considered a different type, so
--- cannot be inadvertently mixed. *The curve order must be prime*.
+-- cannot be inadvertently mixed. *The curve order must be prime, and `_y` cannot be zero*.
 data Point (a :: Nat) (b :: Nat) (baseX :: Nat) (baseY :: Nat) f = 
   Projective {_x :: f, _y :: f, _z :: f} deriving stock (Show) -- (x * inv0 z, y * inv0 z)
             
@@ -48,14 +48,14 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
   Eq (Point a b baseX baseY f) where
     
   -- x1/z1 == x2/z2 -> x1*z2/(x2*z1) == 1 -> same for y -> x1*z2/(x2*z1) == y1*z2/(y2*z1)
-  -- all point(s) at infinity are equal  
+  -- All (neutral) points at infinity are equal.  
   (==) (Projective x1 y1 z1) (Projective x2 y2 z2) = 
-    (z1 /= 0 && z2 /= 0 && x1 * y2 == x2 * y1) || (z1 == 0 && z2 == 0)
+    (x1 * z2 == x2 * z1) && (y1 * z2 == y2 * z1)
 
 
 -- | The `CurvePt` class provides the bulk of the functionality related to operations
 -- involving points on the elliptic curve. It supports both the Pallas and Vesta curve
--- point type, as well as any other curves (using the arbitrary curve parameters). The
+-- point types, as well as any other curves (using the arbitrary curve parameters). The
 -- curve order must be prime.
 class CurvePt a where
 
@@ -67,8 +67,8 @@ class CurvePt a where
   fromBytesC :: ByteString -> Maybe a
 
   -- | The `isOnCurve` function validates whether the point is on the curve. It is 
-  -- already utilized within `toBytesC` deserialization and within hash-to-curve (for
-  -- redundant safety).
+  -- already utilized within `fromBytesC` deserialization, within hash-to-curve (for
+  -- redundant safety) and within `toBytesC` serialization.
   isOnCurve :: a -> Bool
 
   -- | The `negatePt` function negates a point.
@@ -80,7 +80,7 @@ class CurvePt a where
   -- | The `pointAdd` function adds two curve points on the same elliptic curve.
   pointAdd :: a -> a -> a
 
-  -- | The `toBytesC` function serializes a (compressed) point to a @ByteStream@.
+  -- | The `toBytesC` function serializes a point to a (compressed) @ByteStream@.
   toBytesC :: a -> ByteString
 
 
@@ -107,7 +107,7 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
           sgn0y = if index bytes 0 == 0x02 then 0 else 1 :: Integer
           -- calculate y squared from deserialized x-coordinate and curve constants
           alpha = (\t -> t ^ (3 :: Integer) + ((fromInteger $ A) :: f) * t + ((fromInteger $ B) :: f)) <$> x
-          -- get square root (thus a proposed y-coordinate)
+          -- get square root (thus a proposed y-coordinate; note y cannot be zero)
           beta = alpha >>= sqrt
           -- adjust which root is selected for y-coordinate
           y =  (\t -> if sgn0 t == sgn0y then t else negate t) <$> beta
@@ -128,12 +128,12 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
   negatePt (Projective x y z) = Projective x (- y) z
 
 
-  -- Anything with z=0 is neutral
+  -- Anything with z=0 is neutral (y cannot be 0)
   neutral = Projective 0 1 0
 
 
   -- See https://eprint.iacr.org/2015/1060.pdf page 8; Algorithm 1: Complete, projective 
-  -- point addition for arbitrary prime order short Weierstrass curves 
+  -- point addition for arbitrary (odd) prime order short Weierstrass curves 
   -- E/Fq : y^2 = x^3 + ax + b. The code has the intermediate additions 'squashed out'
   pointAdd (Projective x1 y1 z1) (Projective x2 y2 z2) = result
     where
@@ -161,7 +161,7 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
   -- of https://www.secg.org/sec1-v2.pdf. Only compressed points are supported.
   --toBytesC (Projective xp yp zp)
   toBytesC pt
-    | not $ isOnCurve pt = error "trying to deserialize point not on curve" 
+    | not $ isOnCurve pt = error "trying to serialize point not on curve" 
     | _z pt == 0 = pack [0]
     | sgn0 y == 0 = cons 0x02 (toBytesF x)
     | otherwise   = cons 0x03 (toBytesF x)

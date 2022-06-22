@@ -32,7 +32,8 @@ import GHC.Word (Word8)
 import GHC.TypeLits (KnownNat, Nat, natVal)
 
 
--- | The `Fz (z :: Nat)` field element (template) type includes a parameterized modulus of @z@.
+-- | The `Fz (z :: Nat)` field element (template) type includes a parameterized modulus 
+-- of @z@.
 newtype Fz (z :: Nat) = Fz Integer deriving stock (Eq)
 
 
@@ -43,27 +44,20 @@ newtype Fz (z :: Nat) = Fz Integer deriving stock (Eq)
 -- | The `Fz` type is an instance of the `Num` class.
 instance KnownNat z => Num (Fz z) where
 
-  fromInteger a = {-# SCC "fieldFrom" #-} Fz $ a `mod` MOD
-  {-# INLINE fromInteger #-}
+  fromInteger a = Fz $ a `mod` MOD
    
-  (+) (Fz a) (Fz b) = {-# SCC "fieldAdd" #-} Fz res
-    where
-      sum0 = a + b :: Integer
-      res = if sum0 < MOD then sum0 else sum0 - MOD :: Integer
-  {-# INLINE (+) #-}
+  (+) (Fz a) (Fz b) = fromInteger (a + b)
   
-  (-) (Fz a) (Fz b) = {-# SCC "fieldSub" #-} fromInteger (a - b)
-  {-# INLINE (-) #-}
+  (-) (Fz a) (Fz b) = fromInteger (a - b)
 
-  (*) (Fz a) (Fz b) = {-# SCC "fieldMul" #-} fromInteger (a * b)
-  {-# INLINE (*) #-}
+  (*) (Fz a) (Fz b) = fromInteger (a * b)
 
-  abs = error "abs: not implemented"
+  abs = error "abs: not implemented/needed"
   
-  signum = error "signum: not implemented"
+  signum = error "signum: not implemented/needed"
 
 
--- | The `Fz` type is an instance of the `Show` class written in hexadecimal.
+-- | The `Fz` type is an instance of the `Show` class with output in hexadecimal.
 instance KnownNat z => Show (Fz z) where
 
   show (Fz a) = "0x" ++ ["0123456789ABCDEF" !! nibble n | n <- [e, e-1..0]]
@@ -79,7 +73,7 @@ class (Num a, Eq a) => Field a where
   -- | The `fromBytesF` function is the primary deserialization constructor which 
   -- consumes a big-endian `ByteString` sized to minimally contain the modulus 
   -- and returns a field element. The deserialized integer must already be properly 
-  -- reduced to reside within [0..modulus).
+  -- reduced to reside within [0..modulus), otherwise Nothing is returned.
   fromBytesF :: ByteString  -> Maybe a
 
   -- | The `_fromBytesF` function is the secondary deserialization constructor which
@@ -89,12 +83,12 @@ class (Num a, Eq a) => Field a where
   _fromBytesF :: ByteString -> a
 
   -- | The `hash2Field` function provides intermediate functionality that is suitable
-  -- for ultimately supporting the `Curves.hash2Curve` function. This function 
-  -- returns a 2-tuple of field elements.
+  -- for ultimately supporting the `Curves.hash2Curve` function. This function returns
+  -- a 2-tuple of field elements.
   hash2Field :: ByteString -> String -> String -> (a, a)
 
-  -- | The `inv0` function returns the multiplicative inverse as calculated by 
-  -- Fermat's Little Theorem (mapping 0 to 0).
+  -- | The `inv0` function returns the multiplicative inverse as calculated by Fermat's
+  -- Little Theorem (mapping 0 to 0).
   inv0 :: a -> a
 
   -- | The `isSqr` function indicates whether the operand has a square root.
@@ -115,30 +109,30 @@ class (Num a, Eq a) => Field a where
   sqrt :: a -> Maybe a
 
   -- | The `toBytesF` function serializes an element into a big-endian `ByteString` 
-  -- sized to minimal contain the modulus.
+  -- sized to minimally contain the modulus.
   toBytesF :: a -> ByteString
 
   -- | The `toI` function returns the field element as a properly reduced Integer.
   toI :: a -> Integer
 
 
--- | The `Fz z` type is an instance of the `Field` class. These functions are largely 
+-- | The `Fz z` type is an instance of the `Field` class. Several functions are largely 
 -- simple adapters to the more generic internal functions implemented further below.
 instance KnownNat z => Field (Fz z) where
 
   -- Validated deserialization, returns a Maybe field element. Follows section 2.3.6
   -- of https://www.secg.org/sec1-v2.pdf
   -- If ByteString is not the correct length or integer >= modulus, return Nothing. 
-  -- fromBytes :: ByteString  -> Maybe a
+  -- fromBytesF :: ByteString  -> Maybe a
   fromBytesF bytes | Data.ByteArray.length bytes /= corLen || integer >= MOD = Nothing
                    | otherwise = Just $ fromInteger integer
     where
-      corLen = (7 + until ((MOD <) . (2 ^)) (+ 1) 0) `div` 8 :: Int
+      corLen = (7 + until ((MOD <) . (2 ^)) (+ 1) 0) `div` 8 :: Int  -- correct length
       integer = foldl' (\a b -> a `shiftL` 8 .|. fromIntegral b) 0 bytes :: Integer
 
 
   -- Unvalidated deserialization (no limits wrt modulus), returns reduced field element.
-  -- _fromBytes :: ByteString -> a
+  -- _fromBytesF :: ByteString -> a
   _fromBytesF bytes = fromInteger $ foldl' (\a b -> shiftL a 8 .|. fromIntegral b) 0 bytes
 
 
@@ -165,7 +159,7 @@ instance KnownNat z => Field (Fz z) where
       digest0 = mkDigest $ concat [prefix, msg, pack [0,0x80,0], suffix]
       -- Hash the hash again
       digest1 = mkDigest $ concat [digest0, pack [0x01], suffix]
-      -- Mix the two hashes together via bytewise XOR, then hash that too
+      -- Mix the two above hashes together via bytewise XOR, then hash that too
       mix = xor digest0 digest1 :: ByteString
       digest2 = mkDigest $ concat [mix, pack [0x02], suffix]
 
@@ -185,7 +179,7 @@ instance KnownNat z => Field (Fz z) where
   sgn0 (Fz a) = a `mod` 2
 
 
-  -- Shift right by 1 (divides the element by 2, toss remainder)
+  -- Shift right by 1 (divides the element by 2, discarding the remainder)
   -- shiftR1 :: a -> a
   shiftR1 (Fz a) = Fz $ a `div` 2
 
@@ -220,14 +214,14 @@ instance KnownNat z => Field (Fz z) where
 -- | Modular exponentiation.
 -- _powMod :: operand -> exponent -> modulus
 _powMod :: Integer -> Integer -> Integer -> Integer
-_powMod _ e q | e < 0 || q < 3 = error "Invalid exponent/modulus"
+_powMod _ e q | e < 0 || q < 2 = error "Invalid exponent/modulus"
 _powMod _ 0 _ = 1
 _powMod a 1 _ = a
 _powMod a e q | even e = _powMod (a * a `mod` q) (shiftR e 1) q
               | otherwise = a * _powMod a (e - 1) q `mod` q
 
 
--- | Is operand a square vie Legendre symbol.
+-- | Is operand a square via Legendre symbol.
 -- isSqr :: operand -> modulus
 _isSqr :: Integer -> Integer -> Bool
 _isSqr a q = (legendreSymbol == 0) || (legendreSymbol == 1)
@@ -238,19 +232,19 @@ _isSqr a q = (legendreSymbol == 0) || (legendreSymbol == 1)
 -- _sqrtVt :: operand -> modulus -> \'s\' -> \'p\' -> nonSquare
 _sqrtVt :: Integer -> Integer -> Integer -> Integer -> Integer -> Maybe Integer
 _sqrtVt 0 _ _ _ _ = Just 0
-_sqrtVt a q _ _ _ | not (_isSqr a q) = Nothing
-_sqrtVt _ _ _ _ 0 = Nothing
+_sqrtVt a q _ _ _ | not (_isSqr a q) = Nothing  -- Not truly necessary
+_sqrtVt _ _ _ _ 0 = Nothing  -- covers the bases
 _sqrtVt a q s p c = Just result
   where
     t = _powMod a p q
     r = _powMod a ((p + 1) `div` 2) q
-    result = loopy t r c s
+    result = loopy t r c s  -- recursively iterate the function below
     loopy :: Integer -> Integer -> Integer -> Integer -> Integer
     loopy tt  _  _ ss | tt == 0 || ss == 0 = 0
     loopy  1 rr  _  _ = rr
     loopy tt rr cc ss = loopy t_n r_n c_n s_n  -- read _n as _next
       where
-        s_n = head ([i | i <- [1..(ss - 1)], _powMod tt (2 ^ i) q == 1] ++ [0])
+        s_n = head ([i | i <- [1..(ss - 1)], _powMod tt (2 ^ i) q == 1] ++ [0]) -- ++0 avoids empty
         ff = _powMod cc (2 ^ (ss - s_n - 1)) q
         r_n = rr * ff `mod` q
         t_n = (tt * _powMod ff 2 q) `mod` q

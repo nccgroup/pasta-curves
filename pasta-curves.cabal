@@ -51,7 +51,6 @@ executable pasta-curves
   ghc-options:         -threaded
                        -rtsopts
                        -with-rtsopts=-N
---                       -prof
 
 test-suite pasta-curves-test
   import:              common-options
@@ -76,4 +75,3 @@ benchmark pasta-curves-benchmark
   ghc-options:         -threaded
                        -rtsopts
                        -with-rtsopts=-N
-                       -O2
