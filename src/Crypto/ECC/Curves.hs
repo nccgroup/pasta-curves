@@ -156,6 +156,9 @@ instance (Field f, KnownNat a, KnownNat b, KnownNat baseX, KnownNat baseY) =>
       m16 = (- m1 - m2 + m5) * (m1 + m6 + m7)
       result = Projective (-m13 + m14) (m8 + m12) (m15 + m16) :: Point a b baseX baseY f
 
+  -- Note that point doubling from algorithm 3 on page 10 would require around "13" 
+  -- multiplications (not much/enough performance benefit)
+
 
   -- Serialize a point on the elliptic curve into a ByteString based on section 2.3.3
   -- of https://www.secg.org/sec1-v2.pdf. Only compressed points are supported.

@@ -27,9 +27,11 @@ import Data.ByteArray (convert, length, xor)
 import Data.ByteString (concat, foldl', pack, replicate)
 import Data.ByteString.UTF8 (ByteString, fromString)
 import Data.Char (chr)
+import Data.Tuple (swap)
 import Data.Typeable (Proxy (Proxy))
 import GHC.Word (Word8)
 import GHC.TypeLits (KnownNat, Nat, natVal)
+import System.Random (Random(randomR), RandomGen)
 
 
 -- | The `Fz (z :: Nat)` field element (template) type includes a parameterized modulus 
@@ -67,6 +69,13 @@ instance KnownNat z => Show (Fz z) where
       e = ((3 + until ((MOD <) . (2 ^)) (+ 1) 0) `div` 4) - 1 :: Int
 
 
+instance KnownNat z => Bounded (Fz z) where
+  
+  minBound = 0
+
+  maxBound = fromInteger $ MOD - 1
+
+
 -- | The `Field` class provides useful support functionality for field elements.
 class (Num a, Eq a) => Field a where
 
@@ -93,6 +102,9 @@ class (Num a, Eq a) => Field a where
 
   -- | The `isSqr` function indicates whether the operand has a square root.
   isSqr :: a -> Bool
+
+  -- | The `rndF` function returns a random (invertible/non-zero) field element.
+  rndF :: (RandomGen r) => r -> (r, a)
 
   -- | The `sgn0` function returns the least significant bit of the field element as an
   -- Integer.
@@ -172,6 +184,10 @@ instance KnownNat z => Field (Fz z) where
   -- Determines if the operand has a square root. Uses helper functions with Integers
   -- isSqr :: a -> Bool
   isSqr (Fz a) = _isSqr a (MOD)
+
+
+  -- The `rndF` function returns a random (invertible/non-zero) field element.
+  rndF rndGen = fromInteger <$> swap (randomR (1, MOD - 1) rndGen)
 
 
   -- Returns the least significant bit of the field element as an Integer

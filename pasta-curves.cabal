@@ -1,6 +1,6 @@
-cabal-version:         3.0
+cabal-version:         2.4
 name:                  pasta-curves
-version:               0.0.0.0
+version:               0.0.1.0
 synopsis:              Provides the Pasta curves: Pallas, Vesta and their field elements Fp and Fq.
 description:           Provides the Pasta curves: Pallas, Vesta and their field elements Fp and Fq. 
                        See the PastaCurves module below and/or the GitHub repository README.md for more details.
@@ -30,7 +30,8 @@ common common-options
                        utf8-string >= 1 && < 1.0.3,
                        cryptonite >= 0.29 && < 0.31,
                        memory >= 0.16 && < 0.18,
-                       bytestring >= 0.10 && < 0.11.4
+                       bytestring >= 0.10 && < 0.11.4,
+                       random >= 1.1 && < 1.3
   other-modules:       Curves, Fields, Pasta
   ghc-options:         -Weverything
                        -Wno-missing-import-lists

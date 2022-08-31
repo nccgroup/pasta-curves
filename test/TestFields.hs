@@ -4,12 +4,13 @@
 {-# OPTIONS_GHC -Wno-orphans -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Redundant bracket" #-}
 
-module TestFields (fieldProps, testBadF, testGoodF) where
+module TestFields (fieldProps, testBadF, testGoodF, testRnd) where
 
 import Prelude hiding (sqrt)
 import Data.ByteString (pack)
 import Data.Maybe (fromJust, isNothing)
 import Data.Word (Word8)
+import System.Random (mkStdGen, StdGen)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase, assertBool)
 import Test.Tasty.QuickCheck (Arbitrary(..), choose, testProperty)
@@ -61,3 +62,10 @@ testGoodF = testCase "testGoodF" $
     assertBool "sgn0 1" (sgn0 (1 :: Fq) == 1)
     -- hash2Field tested as part of hash2Curve
 
+testRnd :: TestTree
+testRnd = testCase "testRnd" $
+  do
+    let (r1, f1) = rndF (mkStdGen 1) :: (StdGen, Fp)
+    let (_r2, f2) = rndF r1 :: (StdGen, Fp)
+    assertBool "testRnd" (f1 + f2 == f2 + f1)
+    -- hash2Field tested as part of hash2Curve

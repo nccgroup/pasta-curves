@@ -51,12 +51,12 @@ Projective {_px = 0x3CDC6A090F2BB3B52714C083929B620FE24ADBCBBD420752108CD7C29E54
 
 {-# LANGUAGE DataKinds, NoImplicitPrelude, Safe #-}
 
-module PastaCurves (Fp, Fq,  Pallas, Vesta, CurvePt(..), Curve(..), hashToPallas, 
-  hashToVesta, Field(..), pallasPrime, vestaPrime, exampleFp, exampleFq, examplePallasPt, 
-  exampleVestaPt, Num(..)) where
+module PastaCurves (Fp, Fq, Pallas, Vesta, CurvePt(..), Curve(..), hashToPallas, 
+  hashToVesta, rndPallas, rndVesta, Field(..), pallasPrime, vestaPrime, exampleFp, 
+  exampleFq, examplePallasPt, exampleVestaPt, Num(..)) where
 
 import Pasta (Fp, Fq, Num(..), Pallas, Vesta, CurvePt(..), Curve(..), Field(..), 
-  hashToPallas, hashToVesta, pallasPrime, vestaPrime)
+  hashToPallas, hashToVesta, rndPallas, rndVesta, pallasPrime, vestaPrime)
 import Data.ByteString.UTF8 (fromString)
 
 

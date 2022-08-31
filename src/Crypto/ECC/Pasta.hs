@@ -13,15 +13,16 @@ two isogenous curves, mapping functionality, and coefficient vectors). The algor
 are NOT constant time; Safety and simplicity are the top priorities.
 -}
 
-{-# LANGUAGE DataKinds, NoImplicitPrelude, Safe #-}
+{-# LANGUAGE DataKinds, NoImplicitPrelude, ScopedTypeVariables, Safe #-}
 
 module Pasta (Fp, Fq, Num(..), Pallas, Vesta, Curve(..), CurvePt(..), Field(..), 
-  hashToPallas, hashToVesta, pallasPrime, vestaPrime) where
+  hashToPallas, hashToVesta, rndPallas, rndVesta, pallasPrime, vestaPrime) where
 
 import Prelude
 import Curves (Curve(..), CurvePt(..), Point(..))
 import Fields (Fz, Field(..))
 import Data.ByteString.UTF8 (ByteString)
+import System.Random (RandomGen)
 
 
 -- | `Fp` is the field element used as a coordinate in the Pallas elliptic curve.
@@ -96,6 +97,16 @@ hashToVesta msg = result
     yBot = x ^ (3::Integer) + isoVestaVecs !! 10 * x ^ (2::Integer) + isoVestaVecs !! 11 * x + isoVestaVecs !! 12 
     proposed = Projective (xTop * inv0 xBot) (y * yTop * inv0 yBot) 1 :: Vesta
     result = if isOnCurve proposed then proposed else error "hashed to Vesta non-point"
+
+
+-- | The `rndPallas` function returns a random Pallas point when given a StdGen.
+rndPallas :: forall g. RandomGen g => g -> (g, Pallas)
+rndPallas rndGen = hashToPallas . toBytesF <$> (rndF rndGen :: (g, Fq))
+
+
+-- | The `rndVesta` function returns a random Vests point when given a StdGen.
+rndVesta :: forall g. RandomGen g => g -> (g, Vesta)
+rndVesta rndGen = hashToVesta . toBytesF <$> (rndF rndGen :: (g, Fp))
 
 
 -- | The Pallas field modulus https://neuromancer.sk/std/other/Pallas

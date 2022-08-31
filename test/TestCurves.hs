@@ -3,13 +3,15 @@
 {-# LANGUAGE FlexibleInstances, NoImplicitPrelude, Trustworthy #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module TestCurves (curveProps, testPOI, testHashToPallas, testHashToVesta, testBadC, testPallasEq) where
+module TestCurves (curveProps, testPOI, testHashToPallas, testHashToVesta, 
+  testBadC, testPallasEq, testRndPV) where
 
 import Prelude hiding (exp)
 import Data.ByteString (pack)
 import Data.ByteString.UTF8 (fromString)
 import Data.Maybe (fromJust, isNothing)
 import Data.Word (Word8)
+import System.Random (mkStdGen, StdGen)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (assertBool, testCase)
 import Test.Tasty.QuickCheck (Arbitrary(..), testProperty)
@@ -93,9 +95,9 @@ testPallasEq = testCase "bad Eq" $ do
   let x3 = 0x1dc72099914e05a28ce349b110c6f52291eb1cec24643bbed1fb489f7cb41f47 :: Fp
   let y3 = 0x01b1f3ee3ec752c0a9022c1c2e178d00c10aa97417236f91a49ab232ec347c4f :: Fp
   let z3 = 1 :: Fp
-  assertBool "Bad Eq1" $ ((Projective x1 y1 z1) :: Pallas) /= (Projective x2 y2 z2)
-  assertBool "Bad Eq2" $ ((Projective x2 y2 z2) :: Pallas) /= (Projective x3 y3 z3)
-  assertBool "Bad Eq3" $ ((Projective x3 y3 z3) :: Pallas) /= (Projective x1 y1 z1)
+  assertBool "Bad Eq1" $ (Projective x1 y1 z1 :: Pallas) /= Projective x2 y2 z2
+  assertBool "Bad Eq2" $ (Projective x2 y2 z2 :: Pallas) /= Projective x3 y3 z3
+  assertBool "Bad Eq3" $ (Projective x3 y3 z3 :: Pallas) /= Projective x1 y1 z1
 
 
 testHashToPallas :: TestTree
@@ -120,3 +122,13 @@ testHashToVesta = testCase "testHashToVesta" $ assertBool "Failed testHashToVest
     y = 0x0256eafc0188b79bfa7c4b2b393893ddc298e90da500fa4a9aee17c2ea4240e6 * inv0 (z ^ (3::Integer))
     expected = Projective x y 1 :: Vesta
     helper = actual == expected
+
+testRndPV :: TestTree
+testRndPV = testCase "testRnd" $
+  do
+    let (r1, f1) = rndPallas (mkStdGen 1) :: (StdGen, Pallas)
+    let (r2, f2) = rndPallas r1 :: (StdGen, Pallas)
+    assertBool "testRndP" (pointAdd f1 f2 == pointAdd f2 f1)
+    let (r3, f3) = rndVesta r2 :: (StdGen, Vesta)
+    let (_r4, f4) = rndVesta r3 :: (StdGen, Vesta)
+    assertBool "testRndV" (pointAdd f3 f4 == pointAdd f4 f3)
