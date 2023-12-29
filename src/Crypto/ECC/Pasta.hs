@@ -65,10 +65,10 @@ type IsoVesta = (Point 0x267f9b2ee592271a81639c4d96f787739673928c7d01b212c515ad7
 
 -- | The `hashToPallas` function takes an arbitrary `ByteString` and maps it to a valid 
 -- point on the Pallas elliptic curve (of unknown relation to the base point).
-hashToPallas :: ByteString -> Pallas
-hashToPallas msg = result 
+hashToPallas :: String -> ByteString -> Pallas
+hashToPallas domain_separator msg = result 
   where
-    (fe0, fe1) = hash2Field msg "z.cash:test" "pallas" :: (Fp, Fp)
+    (fe0, fe1) = hash2Field msg domain_separator "pallas" :: (Fp, Fp)
     q0 = mapToCurveSimpleSwu fe0 (fromInteger (-13)) :: IsoPallas  -- -13 is Pasta specific magic constant
     q1 = mapToCurveSimpleSwu fe1 (fromInteger (-13)) :: IsoPallas
     (Projective xp yp zp) = pointAdd q0 q1 :: IsoPallas
@@ -79,7 +79,6 @@ hashToPallas msg = result
     yBot = x ^ (3::Integer) + isoPallasVecs !! 10 * x ^ (2::Integer) + isoPallasVecs !! 11 * x + isoPallasVecs !! 12 
     proposed = Projective (xTop * inv0 xBot) (y * yTop * inv0 yBot) 1 :: Pallas
     result = if isOnCurve proposed then proposed else error "hashed to Pallas non-point"
-
 
 -- | The `hashToVesta` function takes an arbitrary `ByteString` and maps it to a valid 
 -- point on the Vesta elliptic curve (of unknown relation to the base point).
@@ -101,7 +100,7 @@ hashToVesta msg = result
 
 -- | The `rndPallas` function returns a random Pallas point when given a StdGen.
 rndPallas :: forall g. RandomGen g => g -> (g, Pallas)
-rndPallas rndGen = hashToPallas . toBytesF <$> (rndF rndGen :: (g, Fq))
+rndPallas rndGen = hashToPallas "z.cash:test" . toBytesF <$> (rndF rndGen :: (g, Fq))
 
 
 -- | The `rndVesta` function returns a random Vests point when given a StdGen.

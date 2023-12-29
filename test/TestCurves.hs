@@ -103,7 +103,7 @@ testPallasEq = testCase "bad Eq" $ do
 testHashToPallas :: TestTree
 testHashToPallas = testCase "testHashToPallas" $ assertBool "Failed testHashToPallas" helper
   where
-    actual = hashToPallas (fromString "Trans rights now!")  -- String from zcash test vector line 147 (link below)
+    actual = hashToPallas "z.cash:test" (fromString "Trans rights now!")  -- String from zcash test vector line 147 (link below)
     -- See https://github.com/zcash/pasta_curves/blob/21fd9e2c1bbd2d049bfe95588d77cb884e9f93ab/src/pallas.rs#L150-L158
     z = 0x1d48103df8fcbb70d1809c1806c95651dd884a559fec0549658537ce9d94bed9 :: Fp
     x = 0x36a6e3a9c50b7b6540cb002c977c82f37f8a875fb51eb35327ee1452e6ce7947 * inv0 (z ^ (2::Integer))
